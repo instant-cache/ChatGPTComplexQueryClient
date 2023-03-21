@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPTAdScenarioGen", "GPTAdScenarioGen\GPTAdScenarioGen.csproj", "{522F5467-D920-40D1-BFCE-3F2B4B5AD459}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{522F5467-D920-40D1-BFCE-3F2B4B5AD459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{522F5467-D920-40D1-BFCE-3F2B4B5AD459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{522F5467-D920-40D1-BFCE-3F2B4B5AD459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{522F5467-D920-40D1-BFCE-3F2B4B5AD459}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {42FEC7D5-7258-40F6-8CBA-CEEDEC444F7F}
+	EndGlobalSection
+EndGlobal
