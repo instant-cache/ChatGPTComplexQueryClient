@@ -85,9 +85,17 @@ namespace GPTAdScenarioGen
                 ApiKey = apiKey
             });
 
-            string completeQuery = _queryTemplate != null 
-                ? string.Format(_queryTemplate, queries)
-                : string.Join(", ", queries);
+            string completeQuery;
+            try
+            {
+                completeQuery = _queryTemplate != null
+                    ? string.Format(_queryTemplate, queries)
+                    : string.Join(", ", queries);
+            }
+            catch (FormatException ex)
+            {
+                throw new FormatException("Количество подзапросов не совпадает с количеством переменных в шаблоне!", ex);
+            }
 
             if (_maxRequestLength != null && completeQuery.Length > _maxRequestLength)
                 throw new ArgumentException($"Длина запроса слишком велика. Длина запроса: {completeQuery.Length}, максимум: {_maxRequestLength}");

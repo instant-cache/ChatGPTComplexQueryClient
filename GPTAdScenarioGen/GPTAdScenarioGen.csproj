@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <None Update="MODELS.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="query.txt">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

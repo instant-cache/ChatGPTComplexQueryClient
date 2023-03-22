@@ -19,7 +19,12 @@ namespace GPTAdScenarioGen.Controllers
             _logger = logger;
         }
 
-        [HttpGet("[action]")]
+        /// <summary>
+        /// Получает массив подзапросов, делает на их основе запрос к ChatGPT и возвращает ответ асинхронным потоком текста
+        /// </summary>
+        /// <param name="queries">Массив подзапросов для вставления в шаблон запроса или использования самостоятельно</param>
+        /// <param name="token">Жетон отмены задачи</param>
+        [HttpPost("[action]")]
         public async Task<IActionResult> QueriesAsStreamAsync([Required] string[] queries, CancellationToken token = default)
         {
             LogRequest("QueriesAsStreamAsync");
@@ -30,7 +35,7 @@ namespace GPTAdScenarioGen.Controllers
         public Task<IActionResult> QueryAsStreamAsync([Required] string query, CancellationToken token = default)
             => QueriesAsStreamAsync(new[] { query }, token);
 
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         public async Task<IActionResult> QueriesAsync([Required] string[] queries, CancellationToken token = default)
         {
             LogRequest("QueriesAsync");
@@ -44,7 +49,7 @@ namespace GPTAdScenarioGen.Controllers
         public Task<IActionResult> QueryAsync([Required] string query, CancellationToken token = default)
             => QueriesAsync(new[] { query }, token);
 
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         public async Task<IActionResult> QueriesAsWebsocketAsync([Required] string[] queries, CancellationToken token = default)
         {
             LogRequest("QueriesAsWebsocketAsync");
@@ -63,7 +68,7 @@ namespace GPTAdScenarioGen.Controllers
             }
             catch (Exception ex)
             {
-                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InternalServerError, $"Ошибка обработки запроса: {ex.Message}", token);
+                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InternalServerError, "Ошибка обработки запроса", token);
                 throw;
             }
             await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);

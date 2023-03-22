@@ -1,6 +1,7 @@
 using GPTAdScenarioGen;
 using NLog;
 using NLog.Web;
+using OpenAI.GPT3.ObjectModels;
 
 var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("Запуск приложения...");
