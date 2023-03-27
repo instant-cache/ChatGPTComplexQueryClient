@@ -72,7 +72,7 @@ namespace GPTAdScenarioGen.Controllers
                 throw;
             }
             await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);
-            return Ok();
+            return new EmptyResult();
         }
 
         [HttpGet("[action]")]
