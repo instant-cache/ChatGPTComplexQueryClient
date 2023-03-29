@@ -16,24 +16,24 @@ curl -X 'GET' \
 
 ## Эндпойнты
 У этого приложения есть шесть эндпойнтов:
-1. GET /api/ChatGptApi/QueriesAsStream
+1. POST /api/ChatGptApi/QueriesAsStream
 Получает массив строковых подзапросов, делает на их основе запрос к ChatGPT и возвращает ответ асинхронным потоком текста.
 Входные данные: body, массив текстовых строк.
-2. POST /api/ChatGptApi/QueryAsStream
+2. GET /api/ChatGptApi/QueryAsStream
 Получает строковый запрос, делает на их основе запрос к ChatGPT и возвращает ответ асинхронным потоком текста.
 Входные данные: url параметр, строка `query`.
 
-3. GET /api/ChatGptApi/Queries
+3. POST /api/ChatGptApi/Queries
 Получает массив строковых подзапросов, делает на их основе запрос к ChatGPT и возвращает ответ одной строкой, когда он будет готов.
 Входные данные: body, массив текстовых строк.
-4. POST /api/ChatGptApi/Query
+4. GET /api/ChatGptApi/Query
 Получает строковый запрос, делает на их основе запрос к ChatGPT и возвращает ответ одной строкой, когда он будет готов.
 Входные данные: url параметр, строка `query`.
 
-5. GET (CONNECT) /api/ChatGptApi/QueriesAsWebsocket
+5. POST (CONNECT) /api/ChatGptApi/QueriesAsWebsocket
 Получает массив строковых подзапросов, делает на их основе запрос к ChatGPT, открывает вебсокет и возвращает ответ через него.
 Входные данные: body, массив текстовых строк.
-6. POST (CONNECT) /api/ChatGptApi/QueryAsWebsocket
+6. GET (CONNECT) /api/ChatGptApi/QueryAsWebsocket
 Получает строковый запрос, делает на их основе запрос к ChatGPT, открывает вебсокет и возвращает ответ через него.
 Входные данные: url параметр, строка `query`.
 
