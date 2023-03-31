@@ -1,12 +1,18 @@
 using GPTAdScenarioGen;
 using NLog;
 using NLog.Web;
-using OpenAI.GPT3.ObjectModels;
 
 var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("Запуск приложения...");
 
 var builder = WebApplication.CreateBuilder(args);
+
+IConfiguration configuration = new ConfigurationBuilder().SetBasePath(builder.Environment.ContentRootPath)
+                                                         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                                                         .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                                                         .Build();
+
+builder.Configuration.AddConfiguration(configuration);
 
 // NLog: Setup NLog for Dependency injection
 builder.Logging.ClearProviders();
