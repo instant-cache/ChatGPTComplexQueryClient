@@ -7,19 +7,21 @@ logger.Info("Запуск приложения...");
 
 var builder = WebApplication.CreateBuilder(args);
 
-IConfiguration configuration = new ConfigurationBuilder().SetBasePath(builder.Environment.ContentRootPath)
-                                                         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                                                         .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                                                         .Build();
-
-builder.Configuration.AddConfiguration(configuration);
 
 // NLog: Setup NLog for Dependency injection
 builder.Logging.ClearProviders();
 builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
 builder.Host.UseNLog();
-// Add services to the container.
+var loc = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()!.Location);
+IConfiguration configuration = new ConfigurationBuilder().SetBasePath(loc)
+                                                         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                                                         .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                                                         .AddEnvironmentVariables()
+                                                         .Build();
 
+builder.Configuration.AddConfiguration(configuration);
+
+// Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
