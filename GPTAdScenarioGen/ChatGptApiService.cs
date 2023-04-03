@@ -13,10 +13,12 @@ namespace GPTAdScenarioGen
     /// </summary>
     public class ChatGptApiService
     {
+        public readonly string? FrontendTemplate = null;
+
         private readonly ILogger _logger;
         private readonly string? _queryTemplate = null;
         private readonly float _temperature = 0.8f;
-        private readonly string _apiKeyVariable = "OPENAI_API_KEY";
+        private readonly string _apiKey = "OPENAI_API_KEY";
         private readonly string _model = "gpt-3.5-turbo";
         private readonly int _maxTokens = 500;
         private readonly int? _maxRequestLength = null;
@@ -38,6 +40,17 @@ namespace GPTAdScenarioGen
             else
                 _queryTemplate = templateConfig;
 
+            string? frontendTemplateConfig;
+            var frontendTemplateConfigPath = config["QueryFrontendPath"];
+            if (!string.IsNullOrWhiteSpace(frontendTemplateConfigPath))
+                frontendTemplateConfig = File.ReadAllText(frontendTemplateConfigPath);
+            else
+                frontendTemplateConfig = config["QueryFrontend"];
+            if (string.IsNullOrWhiteSpace(frontendTemplateConfig))
+                _logger.LogWarning("Не найден или пустой шаблон запроса (параметры \"QueryTemplate\" или \"QueryTemplatePath\". Пользовательские запросы будут отправлены как есть.");
+            else
+                FrontendTemplate = frontendTemplateConfig;
+
             var temperatureConfig = config.GetSection("Temperature");
             if (string.IsNullOrWhiteSpace(temperatureConfig.Value))
                 _logger.LogTrace("Не найден параметр Temperature. Используется значение по умолчанию.");
@@ -48,11 +61,11 @@ namespace GPTAdScenarioGen
             if (_temperature > 1) 
                 throw new ArgumentException("Температура не может быть выше 1 (параметр Temperature).");
 
-            var apiKeyConfig = config["ApiKeyVariableName"];
+            var apiKeyConfig = config["ApiKeyPath"];
             if (string.IsNullOrWhiteSpace(apiKeyConfig))
                 _logger.LogTrace("Не найдено или пустое название переменной ключа к ChatGPT API. Используется значение по умолчанию.");
             else
-                _apiKeyVariable = apiKeyConfig;
+                _apiKey = File.ReadAllText(apiKeyConfig);
 
             var maxTokensConfig = config.GetSection("MaxResponseTokens");
             if (string.IsNullOrWhiteSpace(maxTokensConfig.Value))
@@ -76,13 +89,9 @@ namespace GPTAdScenarioGen
         /// <returns>Асинхронный поток строк, которые возвращает ChatGPT</returns>
         public async IAsyncEnumerable<string> QueryChatGptAsAsyncStream(string[] queries, [EnumeratorCancellation] CancellationToken token = default)
         {
-            var apiKey = Environment.GetEnvironmentVariable(_apiKeyVariable);
-            if (apiKey == null)
-                throw new AppMissingApiKeyException();
-
             var openAiService = new OpenAIService(new OpenAiOptions()
             {
-                ApiKey = apiKey
+                ApiKey = _apiKey
             });
 
             string completeQuery;
@@ -98,7 +107,7 @@ namespace GPTAdScenarioGen
             }
 
             if (_maxRequestLength != null && completeQuery.Length > _maxRequestLength)
-                throw new ArgumentException($"Длина запроса слишком велика. Длина запроса: {completeQuery.Length}, максимум: {_maxRequestLength}");
+                throw new ArgumentException();
 
             openAiService.SetDefaultModelId(_model);
             StringBuilder completeResult = new($"Запрос к API: \"{completeQuery}\"\nОтвет API: \"");
@@ -149,8 +158,13 @@ namespace GPTAdScenarioGen
         }
     }
 
-    public class AppMissingApiKeyException : Exception
+    public class AppMissingApiKeyException : AppException
     {
         public AppMissingApiKeyException() : base("Ключ для ChatGPT API не найден в переменных среды") { }
+    }
+
+    public class AppInvalidQueryException : AppException
+    {
+        public AppInvalidQueryException(int current, int max) : base($"Длина запроса слишком велика. Длина запроса: {current}, максимум: {max}") { }
     }
 }

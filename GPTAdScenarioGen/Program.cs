@@ -21,6 +21,16 @@ IConfiguration configuration = new ConfigurationBuilder().SetBasePath(loc)
 
 builder.Configuration.AddConfiguration(configuration);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllPolicy", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -41,6 +51,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app//.UseHttpsRedirection()
+   .UseCors("AllowAllPolicy")
    .UseAuthorization()
    .UseWebSockets();
 app.MapControllers();

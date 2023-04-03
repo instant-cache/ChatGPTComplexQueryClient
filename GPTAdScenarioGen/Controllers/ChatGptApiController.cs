@@ -28,7 +28,14 @@ namespace GPTAdScenarioGen.Controllers
         public async Task<IActionResult> QueriesAsStreamAsync([Required] string[] queries, CancellationToken token = default)
         {
             LogRequest("QueriesAsStreamAsync");
-            return Ok(_service.QueryChatGptAsAsyncStream(queries, token));
+            try
+            {
+                return Ok(_service.QueryChatGptAsAsyncStream(queries, token));
+            }
+            catch (AppException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("[action]")]
@@ -40,9 +47,17 @@ namespace GPTAdScenarioGen.Controllers
         {
             LogRequest("QueriesAsync");
             StringBuilder resultBuilder = new();
-            await foreach (var subresult in _service.QueryChatGptAsAsyncStream(queries, token))
-                resultBuilder.Append(subresult);
-            return Ok(resultBuilder.ToString());
+            try
+            {
+                await foreach (var subresult in _service.QueryChatGptAsAsyncStream(queries, token))
+                    resultBuilder.Append(subresult);
+                return Ok(resultBuilder.ToString());
+            }
+            catch (AppException ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("[action]")]
@@ -66,10 +81,13 @@ namespace GPTAdScenarioGen.Controllers
                         true, 
                         token);
             }
+            catch (AppException ex)
+            {
+                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InvalidMessageType, ex.Message, token);
+            }
             catch (Exception ex)
             {
-                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InternalServerError, "Ошибка обработки запроса", token);
-                throw;
+                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InternalServerError, $"Ошибка обработки запроса: {ex.Message}", token);
             }
             await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);
             return new EmptyResult();
@@ -82,6 +100,12 @@ namespace GPTAdScenarioGen.Controllers
         private void LogRequest(string requestName)
         {
             _logger.LogInformation("Поступил запрос на метод {name}", requestName);
+        }
+
+        [HttpGet("[action]")]
+        public  async Task<IActionResult> GetQueryTemplateAsync(CancellationToken token = default)
+        {
+            return Ok(_service.FrontendTemplate);
         }
     }
 }

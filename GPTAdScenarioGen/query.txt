@@ -1,1 +1,1 @@
-﻿Give me a short story about {0}
+﻿Предложи {0} рекламы для {1}
