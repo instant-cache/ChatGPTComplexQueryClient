@@ -6,7 +6,7 @@
 1. Зарегистрироваться [здесь](https://platform.openai.com)
 2. Создать новый ключ API [здесь](https://platform.openai.com/account/api-keys)
 3. Поместить сгенерированный ключ API в файл `key.txt` в корне проекта
-4. Запустить приложение (http порт по умолчанию 5001)
+4. Запустить приложение (http/https порты по умолчанию)
 5. Совершить запрос GET http://localhost:5001/api/ChatGptApi/Query?query=puppies
 ```
 curl -X 'GET' \
