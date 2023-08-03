@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Dev settings
 appsettings.Development.json
+*.crt
+*.key
+/GPTAdScenarioGen/key.txt

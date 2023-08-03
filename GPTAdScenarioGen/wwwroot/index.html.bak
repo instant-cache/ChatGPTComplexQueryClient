@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta
+      name="description"
+      content="Chat page :)"
+    />
+    <title>Chat v0</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="snackbar__root"></div>
+    <script id="script" src="https://chatgpt-trislova.agency/bundle.js></script>
+  </body>
+</html>

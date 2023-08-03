@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OpenAI.GPT3.ObjectModels.ResponseModels;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 
 namespace GPTAdScenarioGen.Controllers
 {
@@ -65,7 +69,7 @@ namespace GPTAdScenarioGen.Controllers
             => QueriesAsync(new[] { query }, token);
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> QueriesAsWebsocketAsync([Required] string[] queries, CancellationToken token = default)
+        public async Task<IActionResult> QueriesAsWebsocketAsync(string[] queries, CancellationToken token = default)
         {
             LogRequest("QueriesAsWebsocketAsync");
             if (!HttpContext.WebSockets.IsWebSocketRequest)
@@ -74,22 +78,46 @@ namespace GPTAdScenarioGen.Controllers
             using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
             try
             {
-                await foreach (var subresult in _service.QueryChatGptAsAsyncStream(queries, token))
-                    await webSocket.SendAsync(
-                        new ArraySegment<byte>(Encoding.ASCII.GetBytes(subresult)), 
-                        System.Net.WebSockets.WebSocketMessageType.Text, 
-                        true, 
-                        token);
+                await SendQueriesToWebsocketAsync(webSocket, queries, token);
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);
             }
             catch (AppException ex)
             {
-                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InvalidMessageType, ex.Message, token);
+                await webSocket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, ex.Message, default);
+                _logger.LogError("Некорректный запрос, закрываю соединение. Ошибка: {ex}", ex);
             }
             catch (Exception ex)
             {
-                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InternalServerError, $"Ошибка обработки запроса: {ex.Message}", token);
+                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, $"Ошибка обработки запроса: {ex.Message}", default);
+                _logger.LogError("Ошибка при обработке запроса: {ex}", ex);
             }
-            await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);
+            return new EmptyResult();
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> QueriesAsWebsocketAsync(CancellationToken token = default)
+        {
+            LogRequest("QueriesAsWebsocketAsync");
+            if (!HttpContext.WebSockets.IsWebSocketRequest)
+                return BadRequest("Запрос не является Websocket запросом");
+
+            using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+            try
+            {
+                var queries = await ReceiveQueriesFromWebsocketAsync(webSocket, token);
+                await SendQueriesToWebsocketAsync(webSocket, queries, token);
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Весь ответ от модели был передан", token);
+            }
+            catch (AppException ex)
+            {
+                _logger.LogError("Некорректный запрос, закрываю соединение. Ошибка: {ex}", ex);
+                await webSocket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, ex.Message, default);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Ошибка при обработке запроса: {ex}", ex);
+                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, ex.Message, default);
+            }
             return new EmptyResult();
         }
 
@@ -103,9 +131,55 @@ namespace GPTAdScenarioGen.Controllers
         }
 
         [HttpGet("[action]")]
-        public  async Task<IActionResult> GetQueryTemplateAsync(CancellationToken token = default)
+        public async Task<IActionResult> GetQueryTemplateAsync(CancellationToken token = default)
         {
             return Ok(_service.FrontendTemplate);
+        }
+
+        private async Task<string[]> ReceiveQueriesFromWebsocketAsync(WebSocket webSocket, CancellationToken token = default)
+        {
+            using (MemoryStream stream = new())
+            {
+                WebSocketReceiveResult received;
+                byte[] buffer = new byte[1024 * 4];
+
+                do
+                {
+                    received = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), token);
+                    if (received.Count == 0)
+                    {
+                        _logger.LogWarning("Внимание! Передано сообщение размером 0 байт. Состояние сокета: {state}", webSocket.State);
+                        break;
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Принято сообщение длиной {count} байт", received.Count);
+                        _logger.LogTrace("Сообщение:\n{msg}\n(в байтах:)\n{bytes}", Encoding.UTF8.GetString(buffer), BitConverter.ToString(buffer, 0, received.Count));
+                    }
+                    stream.Write(buffer, 0, received.Count);
+                }
+                while (!received.EndOfMessage);
+
+                var data = Encoding.UTF8.GetString(stream.ToArray());
+                _logger.LogDebug("Принятое сообщение (в кодировке UTF8): {msg}", data);
+
+                string[] queries = JsonSerializer.Deserialize<string[]>(data);
+                if (queries == null)
+                    throw new ArgumentNullException(nameof(queries));
+                _logger.LogDebug("Разобрано {count} запросов в сообщении", queries.Length);
+
+                return queries;
+            }
+        }
+
+        private async Task SendQueriesToWebsocketAsync(WebSocket webSocket, string[] queries, CancellationToken token = default)
+        {
+            await foreach (var subresult in _service.QueryChatGptAsAsyncStream(queries, token))
+                await webSocket.SendAsync(
+                    new ArraySegment<byte>(Encoding.UTF8.GetBytes(subresult)),
+                    WebSocketMessageType.Text,
+                    true,
+                    token);
         }
     }
 }
